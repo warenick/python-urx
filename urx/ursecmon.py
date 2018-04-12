@@ -71,6 +71,9 @@ class ParserUtils(object):
                 elif psize == 46:  # It's 46 bytes in 3.2
                     self.version = (3, 2)
                     allData['RobotModeData'] = self._get_data(pdata, "!IBQ???????BBdd", ("size", "type", "timestamp", "isRobotConnected", "isRealRobotEnabled", "isPowerOnRobot", "isEmergencyStopped", "isSecurityStopped", "isProgramRunning", "isProgramPaused", "robotMode", "controlMode", "speedFraction", "speedScaling", "speedFractionLimit"))
+                elif psize == 47: #It's 47 bytes in 3.5
+                    allData['RobotModeData'] = self._get_data(pdata, "!IBQ???????BBdd?", ("size", "type", "timestamp", "isRobotConnected", "isRealRobotEnabled", "isPowerOnRobot", "isEmergencyStopped", "isSecurityStopped", "isProgramRunning", "isProgramPaused", "robotMode", "controlMode", "speedFraction", "speedScaling", "speedFractionLimit"))
+                    self.version = (3, 5)
                 else:
                     allData["RobotModeData"] = self._get_data(pdata, "!iBQ???????Bd", ("size", "type", "timestamp", "isRobotConnected", "isRealRobotEnabled", "isPowerOnRobot", "isEmergencyStopped", "isSecurityStopped", "isProgramRunning", "isProgramPaused", "robotMode", "speedFraction"))
             elif ptype == 1:
@@ -231,7 +234,7 @@ class SecondaryMonitor(Thread):
     Monitor data from secondary port and send programs to robot
     """
 
-    def __init__(self, host):
+    def __init__(self, host, timeout=0.5):
         Thread.__init__(self)
         self.logger = logging.getLogger("ursecmon")
         self._parser = ParserUtils()
@@ -239,7 +242,7 @@ class SecondaryMonitor(Thread):
         self._dictLock = Lock()
         self.host = host
         secondary_port = 30002    # Secondary client interface on Universal Robots
-        self._s_secondary = socket.create_connection((self.host, secondary_port), timeout=0.5)
+        self._s_secondary = socket.create_connection((self.host, secondary_port), timeout=timeout)
         self._prog_queue = []
         self._prog_queue_lock = Lock()
         self._dataqueue = bytes()
@@ -329,7 +332,7 @@ class SecondaryMonitor(Thread):
                 # self.logger.debug("found packet of size {}".format(len(ans[0])))
                 return ans[0]
             else:
-                # self.logger.debug("Could not find packet in received data")
+                self.logger.debug("Could not find packet in received data")
                 tmp = self._s_secondary.recv(1024)
                 self._dataqueue += tmp
 
@@ -337,6 +340,9 @@ class SecondaryMonitor(Thread):
         """
         wait for next data packet from robot
         """
+        while self.lastpacket_timestamp == 0:
+            time.sleep(0.1)
+
         tstamp = self.lastpacket_timestamp
         with self._dataEvent:
             self._dataEvent.wait(timeout)

@@ -83,7 +83,7 @@ class RobotiqScript(URScript):
     def _import_rq_script(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         rq_script = os.path.join(dir_path, 'rq_script.script')
-        with open(rq_script, 'rb') as f:
+        with open(rq_script, 'rb') as fq:
             rq_script = f.read()
             self.add_header_to_program(rq_script)
 
