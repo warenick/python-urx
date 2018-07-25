@@ -23,8 +23,8 @@ class Robot(URRobot):
     and includes support for setting a reference coordinate system
     """
 
-    def __init__(self, host, use_rt=False):
-        URRobot.__init__(self, host, use_rt)
+    def __init__(self, host, use_rt=False, timeout=0.5):
+        URRobot.__init__(self, host, use_rt, timeout=timeout)
         self.csys = m3d.Transform()
 
     def _get_lin_dist(self, target):
